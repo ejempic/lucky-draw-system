@@ -3,9 +3,10 @@
 @section('content')
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-md-8">
+            @if(auth()->user()->hasRole('admin'))
+            <div class="col-md-4">
                 <div class="card">
-                    <div class="card-header">Lucky Draw</div>
+                    <div class="card-header"><h4>Lucky Draw</h4></div>
                     <div class="card-body">
                         @if (session('status'))
                             <div class="alert alert-success" role="alert">
@@ -32,69 +33,20 @@
                             <input type="text" id="winning_number" class="form-control" disabled >
                         </div>
                         <button class="btn btn-primary btn-block mt-4" onclick="draw()">Draw</button> <span class="draw_result"></span>
-                        <br>
-                        <br>
-                        <h4>Winners</h4>
-                        <div class="overflow-auto">
-
-                            <table class="table table-bordered" id="winners_table">
-                                <thead>
-                                <tr>
-                                    <th>Prizes</th>
-                                    <th class="text-center">1st Winner</th>
-                                    <th class="text-center">2nd Winner</th>
-                                    <th class="text-center">3rd Winner</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                @foreach($prizes as $prize)
-                                <tr>
-                                    <td>{{$prize->name}}</td>
-                                    @foreach(range(0,2) as $index)
-                                        @if(isset($prize->winner[$index]))
-                                            <td class="text-center">
-                                                {{$prize->winner[$index]['user']['name']}}: {{$prize->winner[$index]['number']['number']}}
-                                            </td>
-                                        @else
-                                            <td></td>
-                                        @endif
-                                    @endforeach
-                                </tr>
-                                @endforeach
-                                </tbody>
-                            </table>
-                        <br>
-                        <br>
-                        <h4>Members</h4>
-                        <div class="overflow-auto">
-
-                            <table class="table table-bordered" id="members_table">
-                                <thead>
-                                <tr>
-                                    <th>Users</th>
-                                    @foreach(range(0,$highiest_number_quantity) as $index)
-                                        <th class="text-center">Winner Number {{$loop->iteration}}</th>
-                                    @endforeach
-                                </tr>
-                                </thead>
-                                <tbody>
-                                @foreach($users as $user)
-                                    <tr data-info="{{$user}}">
-                                        <td>{{$user->name}}</td>
-                                        @foreach(range(0,$highiest_number_quantity) as $index)
-                                            @if(isset($user->numbers[$index]))
-                                                <td class="text-center td_wnumber"><input type="text" class="input_wnumber"  data-id="{{$user->numbers[$index]['id']}}" value="{{$user->numbers[$index]['number']}}"></td>
-                                            @else
-                                                <td class="text-center bg-gray td_wnumber"><input type="text" class="input_wnumber" data-id="0"></td>
-                                            @endif
-                                        @endforeach
-                                    </tr>
-                                @endforeach
-                                <tr>
-                                    <td colspan="99" class="text-center"><button class="btn btn-sm btn-block btn-primary" onclick="add_user()">Generate Random Member/User</button></td>
-                                </tr>
-                                </tbody>
-                            </table>
+                    </div>
+                </div>
+            </div>
+            @endif
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body">
+                        @if(auth()->user()->hasRole('admin'))
+                        <div class="winners_div">
+                            @include('partials.winners')
+                        </div>
+                        @endif
+                        <div class="members_div">
+                            @include('partials.members')
                         </div>
                     </div>
                 </div>
@@ -106,6 +58,9 @@
     <style>
         .bg-gray{
             background-color: #c7c7c7;
+        }
+        .not_yours{
+            color: #9a9a9a;
         }
         .input_wnumber{
             background-color: transparent;
@@ -126,15 +81,26 @@
 @section('scripts')
     <script src="{{url('/js/jquery.inputmask.min.js')}}"></script>
     <script>
+        $(document).on('click','#truncate_winners', function(e) {
+            $.ajax({
+                url:"{{route('truncate_winners')}}",
+                success:function(response){
+                    reload_winners();
+                    reload_members();
+                }
+            })
+        });
         $(document).on('keydown','.input_wnumber', function(e) {
             if (e.which == 13) {
                 e.preventDefault();
                 save_number(this);
             }
         });
+
         $(document).on('click','.td_wnumber', function(e) {
             $(this).find('input').focus();
         });
+
         $(document).on('keyup','.input_wnumber', function(e) {
             if($(this).val().length==0){
                 $(this).closest('td').addClass('bg-gray');
@@ -143,6 +109,7 @@
                 $(this).removeClass('text-danger');
             }
         });
+
         $(document).ready(function(){
             $('.input_wnumber').inputmask('9999', { "placeholder": " " });
             $('#winning_number').inputmask('9999', { "placeholder": " " });
@@ -237,13 +204,37 @@
                     if(response.status==='error'){
                         $('.draw_result').html("<div class='alert alert-warning mt-3'><strong>Whooops!</strong> "+response.msg+"</div>");
                     }else{
-                        console.log(response);
-                        $('.draw_result').html("<div class='alert alert-success mt-3'><strong>Congratulations!</strong> "+response.msg+"</div>");
-                    }
 
+                        $('.draw_result').html("<div class='alert alert-success mt-3'><strong>Congratulations!</strong> "+response.msg+"</div>");
+                        reload_winners();
+                        reload_members();
+
+                    }
 
                 }
             });
+
+        }
+        function reload_winners(){
+
+            $.ajax({
+                url:"{{route('ajax_winners')}}",
+                success:function(response){
+                    $('.winners_div').html(response)
+                }
+            })
+
+        }
+
+        function reload_members(){
+
+            $.ajax({
+                url:"{{route('ajax_members')}}",
+                success:function(response){
+                    $('.members_div').html(response)
+                    $('.input_wnumber').inputmask('9999', { "placeholder": " " });
+                }
+            })
 
         }
 

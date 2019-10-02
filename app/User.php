@@ -44,8 +44,13 @@ class User extends Authenticatable
         return $this->hasMany('App\WinningNumbers','user_id');
     }
 
-    public function prize()
+    public function winners()
     {
         return $this->hasOne('App\Winners','user_id');
     }
+//
+//    public function prize()
+//    {
+//        return $this->hasOne('App\Winners','user_id');
+//    }
 }

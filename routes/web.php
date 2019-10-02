@@ -19,3 +19,6 @@ Auth::routes();
 
 Route::get('/', 'HomeController@welcome')->name('/');
 Route::get('/home', 'HomeController@index')->name('home');
+Route::get('/truncate_winners', 'HomeController@truncate_winners')->name('truncate_winners');
+Route::get('/ajax_winners', 'HomeController@ajax_winners')->name('ajax_winners');
+Route::get('/ajax_members', 'HomeController@ajax_members')->name('ajax_members');

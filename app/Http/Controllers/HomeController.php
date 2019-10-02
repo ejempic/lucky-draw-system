@@ -35,6 +35,7 @@ class HomeController extends Controller
         return view('welcome',compact('prizes'));
 
     }
+
     public function index()
     {
         $prizes = UserPrizes::get();
@@ -46,10 +47,13 @@ class HomeController extends Controller
         if($highiest_number_quantity < 2){
             $highiest_number_quantity = 2;
         }
-//        return $prizes;
 
 
-        $users = User::role('member')->with('numbers')->get();
+
+        $users = User::role('member')->with('numbers','winners.prize')->get();
+
+
+//        return $users;
 
 
         return view('home',compact('prizes','users','winners','highiest_number_quantity'));
@@ -67,6 +71,31 @@ class HomeController extends Controller
         ]);
         $member->assignRole('member');
         return $member;
+
+    }
+
+    public function truncate_winners()
+    {
+        DB::table('winners')->truncate();
+    }
+    public function ajax_winners()
+    {
+        $prizes = UserPrizes::get();
+
+        return view('partials.winners',compact('prizes'));
+
+    }
+    public function ajax_members()
+    {
+        $users = User::role('member')->with('numbers','winners.prize')->get();
+        $highiest_number_quantity = WinningNumbers::select('user_id', DB::raw('count(*) as numbers'))
+            ->groupBy('user_id')
+            ->get()
+            ->max('numbers');
+        if($highiest_number_quantity < 2){
+            $highiest_number_quantity = 2;
+        }
+        return view('partials.members',compact('users','highiest_number_quantity'));
 
     }
 }
